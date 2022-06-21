@@ -4,7 +4,6 @@ import game.visuals as visuals
 import game.cache as local_cache
 
 visuals.initialize_game()
-visuals.draw_grid()
 
 def game_loop():
     game_over = False
