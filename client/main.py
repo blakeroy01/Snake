@@ -2,7 +2,6 @@ import time
 import pygame
 import game.visuals as visuals
 import game.cache as local_cache
-
 visuals.initialize_game()
 
 def game_loop():
@@ -20,6 +19,7 @@ def game_loop():
         if X >= visuals.WINDOW_WIDTH or X < 0 or Y >= visuals.WINDOW_HEIGHT or Y < 0:
             game_over = True
         pygame.display.update()
+        pygame.display.set_caption('Astronomic Studios Snake Game')
         visuals.CLOCK.tick(10)
     pygame.display.update()
     time.sleep(2)
