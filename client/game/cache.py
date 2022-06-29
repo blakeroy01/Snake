@@ -9,3 +9,6 @@ def remove_player(player):
 
 def get_player(key):
     pass
+
+def display_players():
+    pass
