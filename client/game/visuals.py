@@ -1,6 +1,5 @@
+from lzma import FILTER_LZMA1
 import pygame
-from game.fruit import FRUIT
-from game.snake import SNAKE
 BACKGROUNDCOLOR = (30, 47, 35)
 GRIDCOLOR = (52, 98, 63)
 WINDOW_HEIGHT = 800
@@ -17,14 +16,9 @@ def initialize_game():
 
     # Fruit Generation Example 
     # Need to Randomly Generate Fruit Objects <------
-    FR = FRUIT()
-    FR.draw_fruit()
-    FR1 = FRUIT()
-    FR1.draw_fruit()
-    FR2 = FRUIT()
-    FR2.draw_fruit()
-    SN = SNAKE()
-    SN.draw_snake()
+
+   
+  
 
 #Draw Map 
 def _draw_grid():

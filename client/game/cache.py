@@ -1,3 +1,4 @@
+
 PLAYERS = {}
 
 def add_player(player):
