@@ -3,17 +3,23 @@ package main
 import (
 	"bytes"
 	"os"
-	"net"
-
+	"strings"
+	"strconv"
+	transport "github.com/blakeroy01/Snake/transport"
+	game "github.com/blakeroy01/Snake/game"
 	"go.uber.org/zap"
 )
 
 func main() {
+	game.Games = make(map[int]*game.Game)
+	// serves as a lobby for players waiting for their game to start
+	// in later versions, this should expand into a slice of *game.Game
+	var lobby *game.Game
 
 	// UDP connection for games running on this server
-	packet, err := net.ListenPacket("udp", ":10000")
+	err := transport.Initialize(":10000")
 	if err != nil {
-		 os.Exit(1)
+		os.Exit(1)
 	}
 
 	// Production logging
@@ -27,46 +33,71 @@ func main() {
 
 	// data is the buffer in which we will store data from the UDP socket
 	data := make([]byte, 1024)
-	createNewGame := true
 	for {
-		n, playerAddress, err := packet.ReadFrom(data)
+		n, playerAddress, err := transport.Packet.ReadFrom(data)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
-		logger.Info("PLAYERADDRESS", zap.Any("Player address", playerAddress))
 
 		data = bytes.TrimSpace(data[:n])
 
 		logger.Info("Data received", zap.String("Data", string(data)))
 
-		formattedData := string(data)
+		formattedData := strings.SplitN(string(data), "&", 2)
 		logger.Info("Data", zap.Any("data", formattedData))
 
-		command := data
+		command, sGameID := formattedData[0], formattedData[1]
+		gameID, err := strconv.Atoi(sGameID)
+		if err != nil {
+			logger.Fatal(err.Error())
+		}
 
 		// this switch statement allows our server to arbitrate
 		switch string(command) {
 		case "j":
-			if createNewGame {
-				// create game
+			if game.CreateNewGame {
+				lobby = game.NewGame(game.NewApple(15, 15), logger)
+				game.Games[lobby.ID] = lobby
+
+				// we now do not need another lobby as there is one finding players
+				game.CreateNewGame = false
 			}
-			// join game
+			// let player join the lobby
+			lobby.Join(playerAddress)
+			if lobby.IsFull() {
+				logger.Info(
+					"lobby is full",
+					zap.Any("Game: ", lobby),
+				)
+				// to everyone in the lobby - "go have fun"
+				go game.Games[lobby.ID].Play()
+
+				// No lobby present for players to join, we need to create a new one.
+				lobby = nil
+				game.CreateNewGame = true
+			}
 
 			// Handle all packet directions from clients
 		case "u":
-			// move up
+			foundGame := game.GetGameByID(gameID)
+			foundGame.Players[playerAddress.String()].MoveUp()
 
 		case "d":
-			// move down
+			foundGame := game.GetGameByID(gameID)
+			foundGame.Players[playerAddress.String()].MoveDown()
 
 		case "l":
-			// move left
+			foundGame := game.GetGameByID(gameID)
+			foundGame.Players[playerAddress.String()].MoveLeft()
 
 		case "r":
-			// move right
+			foundGame := game.GetGameByID(gameID)
+			foundGame.Players[playerAddress.String()].MoveRight()
 
 		case "c":
-			// collision detected
+			foundGame := game.GetGameByID(gameID)
+			foundGame.Players[playerAddress.String()].End()
+			logger.Info("collision detected")
 		default:
 		}
 	}
