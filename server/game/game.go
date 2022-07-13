@@ -96,7 +96,7 @@ func (game *Game) Join(address net.Addr) {
 	game.PIO = append(game.PIO, newPlayer)
 
 	playerAssignBuffer := bytes.Buffer{}
-	playerAssignBuffer.WriteString(strconv.Itoa(len(game.Players)))
+	playerAssignBuffer.WriteString(strconv.Itoa(newPlayer.ID))
 	playerAssignBuffer.WriteString("&")
 	playerAssignBuffer.WriteString(strconv.Itoa(game.ID))
 	_, err := transport.Packet.WriteTo(playerAssignBuffer.Bytes(), address)
