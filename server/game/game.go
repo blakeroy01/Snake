@@ -170,6 +170,15 @@ func (game *Game) Play() {
 
 // MoveApple checks if the player has scored, and moves the apple if necessary
 func (player *Player) ScoreCheck(apple *Apple, logger *zap.Logger) {
+	if player.X == apple.X && player.Y == apple.Y {
+		player.length++
+		apple.X = rand.Intn(25) + 3
+		apple.Y = rand.Intn(25) + 3
+		logger.Info(
+			"player scored",
+			zap.Any("Player: ", player),
+		)
+	}
 }
 
 // MoveUp moves the specified player up
