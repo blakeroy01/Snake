@@ -42,7 +42,7 @@ type Apple struct {
 	Y int
 }
 
-// Game holds all reelvant data for a game
+// Game holds all relevant data for a game
 type Game struct {
 	ID      int
 	Players map[string]*Player
@@ -78,6 +78,11 @@ func NewApple(x int, y int) *Apple {
 
 // Over checks each frame that no players in a game have a true win status.
 func (game *Game) Over() bool {
+	for _, v := range game.Players {
+		if v.lost {
+			return true
+		}
+	}
 	return false
 }
 
@@ -165,6 +170,15 @@ func (game *Game) Play() {
 
 // MoveApple checks if the player has scored, and moves the apple if necessary
 func (player *Player) ScoreCheck(apple *Apple, logger *zap.Logger) {
+	if player.X == apple.X && player.Y == apple.Y {
+		player.length++
+		apple.X = rand.Intn(25) + 3
+		apple.Y = rand.Intn(25) + 3
+		logger.Info(
+			"player scored",
+			zap.Any("Player: ", player),
+		)
+	}
 }
 
 // MoveUp moves the specified player up
