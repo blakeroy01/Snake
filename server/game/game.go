@@ -190,8 +190,8 @@ func (player *Player) MoveRight() {
 // String turns the specified player data into writable string format
 func (player *Player) String() string {
 	return fmt.Sprintf(
-		"%d&%d&%d&%v",
-		player.X, player.Y,
+		"%v&%d&%d&%d&%v",
+		player.ID, player.X, player.Y,
 		player.length, player.lost,
 	)
 }
