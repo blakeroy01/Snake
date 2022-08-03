@@ -13,7 +13,7 @@ visuals.initialize_game()
 
 # Menu loop
 def menu():
-    Menu.start_menu()
+    Menu.menu.mainloop(visuals.SCREEN)
 
 def play():
     # Client joins the server
