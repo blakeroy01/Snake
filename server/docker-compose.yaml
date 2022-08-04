@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  udp-server:
+    container_name: udp-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 10000:10000/udp
+    depends_on:
+      - "redis"
+
+  redis:
+    image: redis
+
+networks:
+  default:

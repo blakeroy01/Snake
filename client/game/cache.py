@@ -3,6 +3,7 @@ PLAYERS = {}
 
 def add_player(player):
     PLAYERS[player.id] = player
+    print(PLAYERS , 'cache')
 
 def remove_player(player):
     pass

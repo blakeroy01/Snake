@@ -10,7 +10,7 @@ class Player:
 
 
 def create_new_player(length, id, snake):
-        return Player(length, id, snake)
+    return Player(length, id, snake)
 
         
     

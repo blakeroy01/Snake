@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"os"
-	"strings"
 	"strconv"
-	transport "github.com/blakeroy01/Snake/transport"
+	"strings"
+
+	"github.com/blakeroy01/Snake/cache"
 	game "github.com/blakeroy01/Snake/game"
+	transport "github.com/blakeroy01/Snake/transport"
 	"go.uber.org/zap"
 )
 
@@ -16,18 +18,25 @@ func main() {
 	// in later versions, this should expand into a slice of *game.Game
 	var lobby *game.Game
 
-	// UDP connection for games running on this server
-	err := transport.Initialize(":10000")
-	if err != nil {
-		os.Exit(1)
-	}
-
 	// Production logging
 	logger, err := zap.NewProduction()
 	if err != nil {
 		os.Exit(1)
 	}
 	defer logger.Sync()
+
+	// UDP connection for games running on this server
+	err = transport.Initialize(":10000")
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+
+	// Redis Client for Caching
+	redisCache, err := cache.Initalize("redis:6379", "", 0)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+	logger.Info("Redis Cache Client Created: " + redisCache.String())
 
 	logger.Info("UDP Server Started")
 

@@ -1,4 +1,5 @@
 import time
+from turtle import update
 import pygame
 import sys
 import game.visuals as visuals
@@ -21,7 +22,7 @@ def play():
     if player_id is None:
         playerval = conn.receive()
         player_id, game_id = playerval[0], playerval[1]
-        print("ID: " + player_id, "Game ID: " + game_id)
+        print("ID: ", player_id, "Game ID: ",game_id)
     
     # create our player for frontend
     if int(player_id) % 2 > 0:
@@ -65,9 +66,15 @@ def play():
             running = False 
         # Update our stored players with the server data. In our case, we can create two players before the running loop, have them be the only two players in the game for now, then update their attributews with the values we get from the server
         player1 = local_cache.PLAYERS[player1id]  
+        print(player1, 'main')
         player2 = local_cache.PLAYERS[player2id]  
-        local_cache.PLAYERS[player1id] = player1.update_player(p1l,(p1x,p1y))
-        local_cache.PLAYERS[player2id] = player2.update_player(p1l,(p2x,p2y))
+        updated_player_1 = player1.update_player(p1l,(p1x,p1y))
+        print(updated_player_1)
+        print(local_cache.PLAYERS)
+        updated_player_2 = player2.update_player(p2l,(p2x,p2y))
+        local_cache.PLAYERS[player1id] = updated_player_1
+        print(local_cache.PLAYERS)
+        local_cache.PLAYERS[player2id] = updated_player_2
         
                 
 
