@@ -2,18 +2,20 @@ import time
 import pygame
 import sys
 
-from pygame_menu import Menu
 import game.visuals as visuals
 import game.cache as local_cache
 import connection as conn
-import game.menu as Menu
+import game.menu as menu
 
 
 visuals.initialize_game()
 
 # Menu loop
 def menu():
-    Menu.menu.mainloop(visuals.SCREEN)
+    menu.menu.mainloop(visuals.SCREEN)
+    while True:
+        if menu.start_game:
+            return False
 
 def play():
     # Client joins the server
