@@ -1,6 +1,5 @@
 import pygame
 import pygame_menu
-from main import *
 
 start_game = False
 
