@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 10000:10000
+      - 10000:10000/udp
     depends_on:
       - "redis"
 

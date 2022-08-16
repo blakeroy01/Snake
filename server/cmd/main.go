@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Redis Client for Caching
-	redisCache, err := cache.Initalize("localhost:6379", "", 0)
+	redisCache, err := cache.Initalize("redis:6379", "", 0)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
