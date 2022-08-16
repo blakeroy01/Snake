@@ -42,7 +42,7 @@ type Apple struct {
 	Y int
 }
 
-// Game holds all relevant data for a game
+// Game holds all reelvant data for a game
 type Game struct {
 	ID      int
 	Players map[string]*Player
@@ -78,8 +78,11 @@ func NewApple(x int, y int) *Apple {
 
 // Over checks each frame that no players in a game have a true win status.
 func (game *Game) Over() bool {
-	for _, v := range game.Players {
-		if v.lost {
+	if len(game.Players) == 0 {
+		return false
+	}
+	for _, player := range game.Players {
+		if player.lost {
 			return true
 		}
 	}
@@ -101,7 +104,7 @@ func (game *Game) Join(address net.Addr) {
 	game.PIO = append(game.PIO, newPlayer)
 
 	playerAssignBuffer := bytes.Buffer{}
-	playerAssignBuffer.WriteString(strconv.Itoa(newPlayer.ID))
+	playerAssignBuffer.WriteString(strconv.Itoa(len(game.Players)))
 	playerAssignBuffer.WriteString("&")
 	playerAssignBuffer.WriteString(strconv.Itoa(game.ID))
 	_, err := transport.Packet.WriteTo(playerAssignBuffer.Bytes(), address)
@@ -170,13 +173,16 @@ func (game *Game) Play() {
 
 // MoveApple checks if the player has scored, and moves the apple if necessary
 func (player *Player) ScoreCheck(apple *Apple, logger *zap.Logger) {
-	if player.X == apple.X && player.Y == apple.Y {
+	if (apple.X == player.X) && (apple.Y == player.Y) {
 		player.length++
-		apple.X = rand.Intn(25) + 3
-		apple.Y = rand.Intn(25) + 3
+		rand.Seed(time.Now().UnixNano())
+		apple.X = rand.Intn(26) + 3
+		apple.Y = rand.Intn(26) + 3
+
 		logger.Info(
 			"player scored",
-			zap.Any("Player: ", player),
+			zap.String("New apple location: ", apple.String()),
+			zap.Int("player new length: ", player.length),
 		)
 	}
 }
@@ -204,8 +210,8 @@ func (player *Player) MoveRight() {
 // String turns the specified player data into writable string format
 func (player *Player) String() string {
 	return fmt.Sprintf(
-		"%v&%d&%d&%d&%v",
-		player.ID, player.X, player.Y,
+		"%d&%d&%d&%v",
+		player.X, player.Y,
 		player.length, player.lost,
 	)
 }

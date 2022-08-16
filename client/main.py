@@ -1,82 +1,84 @@
-import time
-from turtle import update
-import pygame
+import game
+import socket
 import sys
-import game.visuals as visuals
-import game.cache as local_cache
-import connection as conn
-from game.player import create_new_player
+import pygame
 
-visuals.initialize_game()
+
+UDP_IP = "127.0.0.1"
+UDP_PORT = 10000
+UDPSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+def send(message):
+    UDPSocket.sendto(message, (UDP_IP, UDP_PORT))
+
+def get():
+    try:
+        UDPSocket.settimeout(2)
+        data, address = UDPSocket.recvfrom(1024)
+        return data, address
+    except socket.timeout:
+        pygame.event.get()
+        return None, None
+
+
+def menu():
+    game.draw_main_menu()
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                return False
+            elif event.key == pygame.K_ESCAPE:
+                return False
+    return True
+
 
 def play():
     # Client joins the server
     MESSAGE = b"j"
     MESSAGE = MESSAGE + b"&" + b"0"
-    conn.send(MESSAGE)
+    send(MESSAGE)
 
-    # Get player id
+
+    # create both players for our frontend
+    player_1 = game.new_player()
+    player_2 = game.new_player()
     
-    player_id = None
+    # Get player assignment (1 or 2)
+    player_assignment = None
     game_id = None
-    if player_id is None:
-        playerval = conn.receive()
-        player_id, game_id = playerval[0], playerval[1]
-        print("ID: ", player_id, "Game ID: ",game_id)
+    if player_assignment is None:
+        playerval, _ = get()
+        player_assignment, game_id = playerval.decode("utf-8").split('&', -1)
     
-    # create our player for frontend
-    if int(player_id) % 2 > 0:
-        P1 = create_new_player(1,player_id,[])
-        P2 = create_new_player(1,None,[])
-        local_cache.add_player(P1)
-        print(local_cache.PLAYERS)
-    else:
-        P1 = create_new_player(1,None,[])
-        P2 = create_new_player(1,player_id,[])
-        local_cache.add_player(P2)
-        print(local_cache.PLAYERS)
-
-
     MESSAGE = b"d"
+    WINNER = 0
 
     # Game loop
     running = True
     while running:
-        # receive data from socket
-        server_data = conn.receive()
-        print(server_data)
-        # No need to update the client image if no data is sent from server
-        if server_data[0] is None:
+        game.draw_grid()
+
+        # receive data from socket and parse into variables
+        data, _ = get()
+        if data is None:
             continue
         
-        # SNAK-8 (Comments for instruction)
-        # parse data from socket, we have an array that contains this data [appx, appy, player1id, p1x, p1y, p1l, p1lost, player2id, p2x, p2y, p2l, p2lost, _]
-        appx, appy, player1id, p1x, p1y, p1l, p1lost, player2id, p2x, p2y, p2l, p2lost, _ = server_data[0], server_data[1], server_data[2], server_data[3], server_data[4], server_data[5], server_data[6], server_data[7], server_data[8], server_data[9],  server_data[10], server_data[11], server_data[12] 
-        
-        if not P2.id:
-            P2.id = player2id
-            local_cache.add_player(P2)
-        elif not P1.id:
-            P1.id = player1id
-            local_cache.add_player(P1)
+        appx, appy, p1x, p1y, p1l, p1lost, p2x, p2y, p2l, p2lost, _ = data.decode("utf-8").split("&", -1)
 
 
-        # Check if any player has lost. In this case we only have player 1 and player 2. So something like: if p1lost = "true", end loop and determine winner.
-        if p1lost == "true" or p2lost == "true":
-            running = False 
-        # Update our stored players with the server data. In our case, we can create two players before the running loop, have them be the only two players in the game for now, then update their attributews with the values we get from the server
-        player1 = local_cache.PLAYERS[player1id]  
-        print(player1, 'main')
-        player2 = local_cache.PLAYERS[player2id]  
-        updated_player_1 = player1.update_player(p1l,(p1x,p1y))
-        print(updated_player_1)
-        print(local_cache.PLAYERS)
-        updated_player_2 = player2.update_player(p2l,(p2x,p2y))
-        local_cache.PLAYERS[player1id] = updated_player_1
-        print(local_cache.PLAYERS)
-        local_cache.PLAYERS[player2id] = updated_player_2
-        
-                
+        # Win/lose code
+        if p1lost == "true":
+            running = False
+            WINNER = 2
+            print("Player 1 lost")
+        elif p2lost == "true":
+            running = False
+            WINNER = 1
+            print("Player 2 lost")
+
+        # Update our stored player's with the server data
+        player_1.update_player((int(p1x), int(p1y)), int(p1l))
+        player_2.update_player((int(p2x), int(p2y)), int(p2l))
 
         # User input will change the direction that is being fired
         # to the server each iteration
@@ -96,38 +98,51 @@ def play():
 
             # Handle a quit
             if event.type == pygame.QUIT:
-                running = False
+                UDPSocket.close()
                 pygame.quit()
                 sys.exit()
 
         # Border collision detection
+        if player_assignment == "1":
+            MESSAGE = player_1.border_check(MESSAGE)
+            MESSAGE = player_1.collision_check(MESSAGE, player_2)
+        else:
+            MESSAGE = player_2.border_check(MESSAGE)
+            MESSAGE = player_2.collision_check(MESSAGE, player_1)
 
         # Fire the set direction through UDP
-        conn.send(MESSAGE + b"&" + bytes(game_id, "utf-8"))
+        send(MESSAGE + b"&" + bytes(game_id, "utf-8"))
 
-        # SNAK-8 
         # Draw our objects onto the screen
-
-
-        pygame.display.set_caption('Astronomic Studios Snake Game')
-        visuals.CLOCK.tick(10)
+        game.draw_apple(apple_pos=(int(appx), int(appy)))
+        game.draw_snakes(player_one_snake=player_1.snake, player_two_snake=player_2.snake)
         pygame.display.update()
-        time.sleep(2)
     
-    # end game logic
-    print("Game Over")
-    
-def menu():
-    # draw the main menu here
-    # send a request to join the game
-    return False
+    end(int(WINNER), int(player_assignment))
+
+
+def end(winner, localPlayer):
+    won = False
+    print(winner == localPlayer)
+    if winner == localPlayer:
+        won = True
+    response = False
+    while not response:
+        game.draw_end_menu(won)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    response = True
+                    play()
+                elif event.key == pygame.K_ESCAPE:
+                    response = True
 
 def main():
     pygame.init()
     while menu():
         pass
     play()
-    conn.client_socket.close()
+    UDPSocket.close()
     pygame.quit()
     sys.exit()
     
